@@ -1,0 +1,45 @@
+name: Build Electron App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            npx electron-builder --mac dmg -p never
+          else
+            npx electron-builder --win nsis -p never
+          fi
+
+      - name: Rename output for clarity
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            mv dist/*.dmg dist/MyWordApp-macOS.dmg
+          else
+            mv dist/*.exe dist/MyWordApp-Windows.exe
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-MyWordApp
+          path: dist/*
